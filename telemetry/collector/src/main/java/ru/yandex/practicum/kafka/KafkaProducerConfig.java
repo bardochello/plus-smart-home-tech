@@ -1,47 +1,53 @@
 package ru.yandex.practicum.kafka;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
-import ru.yandex.practicum.kafka.serializer.AvroSerializer;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Properties;
 
-@Getter
-@Setter
+@Slf4j
 @Configuration
 public class KafkaProducerConfig {
 
-    @Bean
-    public ProducerFactory<String, SpecificRecordBase> producerFactory() {
-        Map<String, Object> config = new HashMap<>();
-        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, AvroSerializer.class);
+    @Value("${kafka.producer.bootstrap-servers}")
+    private String bootstrapServers;
 
-        config.put(ProducerConfig.ACKS_CONFIG, "all");
-        config.put(ProducerConfig.RETRIES_CONFIG, 3);
-        config.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 1);
-        config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
-        return new DefaultKafkaProducerFactory<>(config);
-    }
+    @Value("${kafka.producer.key-serializer}")
+    private String keySerializer;
 
-    @Bean
-    public KafkaTemplate<String, SpecificRecordBase> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
-    }
+    @Value("${kafka.producer.value-serializer}")
+    private String valueSerializer;
 
-    @Bean
+    @Value("${kafka.producer.acks}")
+    private String acks;
+
+    @Value("${kafka.producer.retries}")
+    private int retries;
+
+    @Value("${kafka.producer.max-in-flight-requests}")
+    private int maxInFlightRequests;
+
+    @Value("${kafka.producer.enable-idempotence}")
+    private boolean enableIdempotence;
+
+    @Bean(destroyMethod = "close")
     public Producer<String, SpecificRecordBase> kafkaProducer() {
-        return producerFactory().createProducer();
+        Properties props = new Properties();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializer);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer);
+        props.put(ProducerConfig.ACKS_CONFIG, acks);
+        props.put(ProducerConfig.RETRIES_CONFIG, retries);
+        props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, maxInFlightRequests);
+        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, enableIdempotence);
+
+        log.info("Создаётся Kafka Producer. Bootstrap servers: {}", bootstrapServers);
+        return new KafkaProducer<>(props);
     }
 }
