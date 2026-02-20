@@ -36,9 +36,6 @@ public class TemperatureSensorEventHandler implements SensorEventHandler {
         log.debug("Обработка события датчика температуры. ID: {}", event.getId());
 
         TemperatureSensorAvro payload = TemperatureSensorAvro.newBuilder()
-                .setId(event.getId())
-                .setHubId(event.getHubId())
-                .setTimestamp(timestampMs)
                 .setTemperatureC(proto.getTemperatureC())
                 .setTemperatureF(proto.getTemperatureF())
                 .build();
