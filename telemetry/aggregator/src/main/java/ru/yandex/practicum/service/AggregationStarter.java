@@ -24,13 +24,12 @@ import java.util.Optional;
 @Slf4j
 @Component
 public class AggregationStarter {
-
     private final KafkaConsumer<String, SensorEventAvro> consumer;
     private final KafkaProducer<String, SensorsSnapshotAvro> producer;
     private final String sensorEventsTopic;
     private final String snapshotsTopic;
 
-    // Хранилище снапшотов в памяти (можно вынести в отдельный Repository класс, но можно и тут)
+    // Хранилище снапшотов в памяти
     private final Map<String, SensorsSnapshotAvro> snapshots = new HashMap<>();
 
     public AggregationStarter(KafkaConfig kafkaConfig,
@@ -47,7 +46,6 @@ public class AggregationStarter {
             consumer.subscribe(List.of(sensorEventsTopic));
             log.info("Aggregator started. Subscribed to: {}", sensorEventsTopic);
 
-            // Хук для корректной остановки при завершении приложения
             Runtime.getRuntime().addShutdownHook(new Thread(consumer::wakeup));
 
             while (true) {
@@ -58,7 +56,6 @@ public class AggregationStarter {
                     try {
                         Optional<SensorsSnapshotAvro> snapshotOpt = updateState(event);
 
-                        // Если состояние изменилось, отправляем снапшот
                         if (snapshotOpt.isPresent()) {
                             SensorsSnapshotAvro snapshot = snapshotOpt.get();
                             ProducerRecord<String, SensorsSnapshotAvro> producerRecord =
@@ -66,12 +63,13 @@ public class AggregationStarter {
 
                             producer.send(producerRecord);
                             log.debug("Snapshot sent for hub: {}", snapshot.getHubId());
+                        } else {
+                            log.trace("Snapshot not updated for event from sensor: {}", event.getId());
                         }
                     } catch (Exception e) {
                         log.error("Error processing event: {}", event, e);
                     }
                 }
-                // Асинхронный коммит оффсетов, чтобы не блокировать цикл
                 consumer.commitAsync();
             }
         } catch (WakeupException e) {
@@ -80,7 +78,6 @@ public class AggregationStarter {
             log.error("Unexpected error in Aggregator loop", e);
         } finally {
             try {
-                // Перед закрытием сбрасываем данные продюсера и фиксируем оффсеты консьюмера
                 producer.flush();
                 consumer.commitSync();
             } finally {
@@ -93,11 +90,8 @@ public class AggregationStarter {
 
     private Optional<SensorsSnapshotAvro> updateState(SensorEventAvro event) {
         String hubId = event.getHubId();
-        // В Avro generated classes timestamp_ms мапится на Instant, если включены logical types,
-        // но входящее событие SensorEventAvro имеет long timestamp. Конвертируем:
         Instant eventTimestamp = Instant.ofEpochMilli(event.getTimestamp());
 
-        // 1. Достаем или создаем снапшот
         SensorsSnapshotAvro snapshot = snapshots.get(hubId);
 
         if (snapshot == null) {
@@ -108,27 +102,20 @@ public class AggregationStarter {
             snapshots.put(hubId, snapshot);
         }
 
-        // 2. Достаем старое состояние датчика
         SensorStateAvro oldState = snapshot.getSensorsState().get(event.getId());
 
-        // 3. Проверяем актуальность
         if (oldState != null) {
-            // Если пришедшее событие старее текущего состояния или данные не изменились -> игнорируем
-            if (oldState.getTimestamp().isAfter(eventTimestamp) || oldState.getTimestamp().equals(eventTimestamp)) {
-                return Optional.empty();
-            }
-            if (oldState.getData().equals(event.getPayload())) {
+            if (oldState.getTimestamp().isAfter(eventTimestamp)) {
                 return Optional.empty();
             }
         }
 
-        // 4. Обновляем состояние
         SensorStateAvro newState = new SensorStateAvro();
         newState.setTimestamp(eventTimestamp);
         newState.setData(event.getPayload());
 
         snapshot.getSensorsState().put(event.getId(), newState);
-        snapshot.setTimestamp(eventTimestamp); // Обновляем время самого снапшота
+        snapshot.setTimestamp(eventTimestamp);
 
         return Optional.of(snapshot);
     }
