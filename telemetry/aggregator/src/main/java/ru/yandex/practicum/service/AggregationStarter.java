@@ -24,12 +24,11 @@ import java.util.Optional;
 @Slf4j
 @Component
 public class AggregationStarter {
+
     private final KafkaConsumer<String, SensorEventAvro> consumer;
     private final KafkaProducer<String, SensorsSnapshotAvro> producer;
     private final String sensorEventsTopic;
     private final String snapshotsTopic;
-
-    // Хранилище снапшотов в памяти
     private final Map<String, SensorsSnapshotAvro> snapshots = new HashMap<>();
 
     public AggregationStarter(KafkaConfig kafkaConfig,
@@ -45,7 +44,6 @@ public class AggregationStarter {
         try {
             consumer.subscribe(List.of(sensorEventsTopic));
             log.info("Aggregator started. Subscribed to: {}", sensorEventsTopic);
-
             Runtime.getRuntime().addShutdownHook(new Thread(consumer::wakeup));
 
             while (true) {
@@ -60,11 +58,8 @@ public class AggregationStarter {
                             SensorsSnapshotAvro snapshot = snapshotOpt.get();
                             ProducerRecord<String, SensorsSnapshotAvro> producerRecord =
                                     new ProducerRecord<>(snapshotsTopic, snapshot.getHubId(), snapshot);
-
                             producer.send(producerRecord);
-                            log.debug("Snapshot sent for hub: {}", snapshot.getHubId());
-                        } else {
-                            log.trace("Snapshot not updated for event from sensor: {}", event.getId());
+                            log.info("Snapshot sent for hub: {} due to sensor: {}", snapshot.getHubId(), event.getId());
                         }
                     } catch (Exception e) {
                         log.error("Error processing event: {}", event, e);
@@ -100,6 +95,10 @@ public class AggregationStarter {
             snapshot.setTimestamp(eventTimestamp);
             snapshot.setSensorsState(new HashMap<>());
             snapshots.put(hubId, snapshot);
+
+            // Новое состояние датчика
+            updateSensorState(snapshot, event, eventTimestamp);
+            return Optional.of(snapshot);
         }
 
         SensorStateAvro oldState = snapshot.getSensorsState().get(event.getId());
@@ -108,15 +107,26 @@ public class AggregationStarter {
             if (oldState.getTimestamp().isAfter(eventTimestamp)) {
                 return Optional.empty();
             }
+
+            if (oldState.getTimestamp().equals(eventTimestamp) &&
+                    oldState.getData().equals(event.getPayload())) {
+                return Optional.empty();
+            }
         }
 
-        SensorStateAvro newState = new SensorStateAvro();
-        newState.setTimestamp(eventTimestamp);
-        newState.setData(event.getPayload());
+        updateSensorState(snapshot, event, eventTimestamp);
 
-        snapshot.getSensorsState().put(event.getId(), newState);
-        snapshot.setTimestamp(eventTimestamp);
+        if (snapshot.getTimestamp().isBefore(eventTimestamp)) {
+            snapshot.setTimestamp(eventTimestamp);
+        }
 
         return Optional.of(snapshot);
+    }
+
+    private void updateSensorState(SensorsSnapshotAvro snapshot, SensorEventAvro event, Instant timestamp) {
+        SensorStateAvro newState = new SensorStateAvro();
+        newState.setTimestamp(timestamp);
+        newState.setData(event.getPayload());
+        snapshot.getSensorsState().put(event.getId(), newState);
     }
 }
