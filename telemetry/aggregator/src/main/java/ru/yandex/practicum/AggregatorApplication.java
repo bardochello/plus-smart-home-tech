@@ -12,7 +12,6 @@ public class AggregatorApplication {
     public static void main(String[] args) {
         ConfigurableApplicationContext context = SpringApplication.run(AggregatorApplication.class, args);
 
-        // Запускаем бесконечный цикл агрегации
         AggregationStarter aggregator = context.getBean(AggregationStarter.class);
         aggregator.start();
     }

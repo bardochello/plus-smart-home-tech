@@ -10,47 +10,47 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
 public class SnapshotService {
-    private final Map<String, SensorsSnapshotAvro> snapshots = new HashMap<>();
+    private final Map<String, SensorsSnapshotAvro> snapshots = new ConcurrentHashMap<>();
 
     public Optional<SensorsSnapshotAvro> updateState(SensorEventAvro event) {
-        SensorsSnapshotAvro snapshot = snapshots.get(event.getHubId());
-        if (snapshot == null) {
-            snapshot = SensorsSnapshotAvro.newBuilder()
-                    .setHubId(event.getHubId())
-                    .setTimestamp(Instant.ofEpochMilli(event.getTimestamp()))
-                    .setSensorsState(new HashMap<>())
-                    .build();
-            snapshots.put(event.getHubId(), snapshot);
-            log.debug("Создан новый снапшот для хаба: {}", event.getHubId());
-        }
+        String hubId = event.getHubId();
+        String sensorId = event.getId();
+        Instant eventTimestamp = Instant.ofEpochMilli(event.getTimestamp());
 
-        SensorStateAvro oldState = snapshot.getSensorsState().get(event.getId());
+        SensorsSnapshotAvro oldSnapshot = snapshots.getOrDefault(hubId, SensorsSnapshotAvro.newBuilder()
+                .setHubId(hubId)
+                .setTimestamp(eventTimestamp)
+                .setSensorsState(new HashMap<>())
+                .build());
 
-        if (oldState != null) {
-            if (oldState.getTimestamp().toEpochMilli() > event.getTimestamp()) {
-                log.trace("Событие устарело: sensor={}, eventTs={}, stateTs={}",
-                        event.getId(), event.getTimestamp(), oldState.getTimestamp().toEpochMilli());
-                return Optional.empty();
-            }
-            if (oldState.getData().equals(event.getPayload())) {
-                log.trace("Данные не изменились для датчика: {}", event.getId());
-                return Optional.empty();
-            }
-        }
+        Map<String, SensorStateAvro> newStateMap = new HashMap<>(oldSnapshot.getSensorsState());
 
         SensorStateAvro newState = SensorStateAvro.newBuilder()
-                .setTimestamp(Instant.ofEpochMilli(event.getTimestamp()))
+                .setTimestamp(eventTimestamp)
                 .setData(event.getPayload())
                 .build();
+        newStateMap.put(sensorId, newState);
 
-        snapshot.getSensorsState().put(event.getId(), newState);
-        snapshot.setTimestamp(Instant.ofEpochMilli(event.getTimestamp()));
+        Instant snapshotTimestamp = eventTimestamp;
 
-        log.debug("Снапшот обновлён: hub={}, sensor={}", event.getHubId(), event.getId());
-        return Optional.of(snapshot);
+        SensorsSnapshotAvro newSnapshot = SensorsSnapshotAvro.newBuilder()
+                .setHubId(hubId)
+                .setTimestamp(snapshotTimestamp)
+                .setSensorsState(newStateMap)
+                .build();
+
+        if (!newSnapshot.equals(oldSnapshot)) {
+            snapshots.put(hubId, newSnapshot);
+            log.info("Updated snapshot for hub {} with sensor {}, new timestamp {}", hubId, sensorId, snapshotTimestamp);
+            return Optional.of(newSnapshot);
+        } else {
+            log.debug("No changes in snapshot for hub {}, skipping publish", hubId);
+            return Optional.empty();
+        }
     }
 }
