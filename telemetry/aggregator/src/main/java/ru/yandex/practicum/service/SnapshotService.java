@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Service
 public class SnapshotService {
+    // Храним последние известные состояния хабов
     private final Map<String, SensorsSnapshotAvro> snapshots = new ConcurrentHashMap<>();
 
     public Optional<SensorsSnapshotAvro> updateState(SensorEventAvro event) {
@@ -44,13 +45,13 @@ public class SnapshotService {
                 .setSensorsState(newStateMap)
                 .build();
 
-        if (!newSnapshot.equals(oldSnapshot)) {
-            snapshots.put(hubId, newSnapshot);
-            log.info("Updated snapshot for hub {} with sensor {}, new timestamp {}", hubId, sensorId, snapshotTimestamp);
-            return Optional.of(newSnapshot);
-        } else {
-            log.debug("No changes in snapshot for hub {}, skipping publish", hubId);
+        if (newSnapshot.equals(oldSnapshot)) {
+            log.debug("Нет изменений в снапшоте для хаба {}, пропускаем публикацию", hubId);
             return Optional.empty();
+        } else {
+            snapshots.put(hubId, newSnapshot);
+            log.info("Обновлен снапшот для хаба {} с датчиком {}, новый timestamp {}", hubId, sensorId, snapshotTimestamp);
+            return Optional.of(newSnapshot);
         }
     }
 }

@@ -20,7 +20,7 @@ public class KafkaConfig {
     @Value("${kafka.producer.bootstrap-servers}")
     private String producerBootstrapServers;
 
-    private final String groupId = "aggregator-group-v1";
+    private static final String groupId = "aggregator-group-v1";
 
     public Properties getConsumerProperties() {
         Properties props = new Properties();
