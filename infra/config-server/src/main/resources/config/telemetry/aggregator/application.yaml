@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: aggregator
+
+kafka:
+  consumer:
+    bootstrap-servers: localhost:9092
+    group-id: aggregator-group-v13
+  producer:
+    bootstrap-servers: localhost:9092
+  topics:
+    sensor-events: telemetry.sensors.v1
+    snapshots: telemetry.snapshots.v1
+
+logging:
+  level:
+    ru.yandex.practicum: INFO

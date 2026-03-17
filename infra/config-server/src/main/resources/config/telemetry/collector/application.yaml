@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: collector
+server:
+  port: 8081
+
+logging:
+  level:
+    ru.yandex.practicum: DEBUG
+
+kafka:
+  producer:
+    bootstrap-servers: localhost:9092
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: ru.yandex.practicum.kafka.serializer.AvroSerializer
+    acks: all
+    retries: 3
+    max-in-flight-requests: 1
+    enable-idempotence: true
+
+topic:
+  sensor-events: telemetry.sensors.v1
+  hub-events: telemetry.hubs.v1
+
+grpc:
+  server:
+    port: 59091
