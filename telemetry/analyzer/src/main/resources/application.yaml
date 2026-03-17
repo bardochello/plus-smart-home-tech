@@ -9,6 +9,9 @@ spring:
         use-random-policy: true
         max-interval: 6000
       fail-fast: true
+      discovery:
+        enabled: true
+        service-id: configserver
   datasource:
     url: jdbc:postgresql://localhost:5432/telemetry
     username: postgres
@@ -20,3 +23,8 @@ spring:
       properties:
         hibernate:
           dialect: org.hibernate.dialect.PostgreSQLDialect
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
