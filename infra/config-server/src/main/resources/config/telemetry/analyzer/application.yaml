@@ -1,35 +1,23 @@
-spring:
-  application:
-    name: analyzer
-  datasource:
-    url: jdbc:postgresql://localhost:5432/telemetry
-    username: postgres
-    password: 12345
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-  sql:
-    init:
-      mode: always
-
-kafka:
-  bootstrap-servers: localhost:9092
-  topics:
-    hub-events: telemetry.hubs.v1
-    snapshots: telemetry.snapshots.v1
+analyzer:
+  kafka:
+    hub-consumer-properties:
+      "bootstrap.servers": localhost:9092
+      "group.id": analyzer-hub-group
+      "key.deserializer": org.apache.kafka.common.serialization.StringDeserializer
+      "value.deserializer": kafka.serializer.HubEventDeserializer
+    snapshot-consumer-properties:
+      "bootstrap.servers": localhost:9092
+      "group.id": analyzer-snapshot-group
+      "key.deserializer": org.apache.kafka.common.serialization.StringDeserializer
+      "value.deserializer": kafka.serializer.SensorSnapshotDeserializer
+    topics:
+      hubs-events: telemetry.hubs.v1
+      sensors-snapshot: telemetry.snapshots.v1
 
 grpc:
   client:
     hub-router:
-      address: static://localhost:59090
-      negotiationType: plaintext
+      address: 'static://localhost:59090'
       enableKeepAlive: true
       keepAliveWithoutCalls: true
-
-logging:
-  level:
-    ru.yandex.practicum: DEBUG
-    org.springframework: INFO
+      negotiationType: plaintext

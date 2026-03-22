@@ -5,24 +5,18 @@ spring:
     import: configserver:http://localhost:8080
   cloud:
     config:
-      retry:
-        use-random-policy: true
-        max-interval: 6000
-      fail-fast: true
       discovery:
         enabled: true
-        service-id: configserver
+        serviceId: config-server
+      fail-fast: true
+      retry:
+        useRandomPolicy: true
+        max-interval: 6000
   datasource:
-    url: jdbc:postgresql://localhost:5432/telemetry
-    username: postgres
-    password: 12345
     driver-class-name: org.postgresql.Driver
-    jpa:
-      hibernate:
-        ddl-auto: update
-      properties:
-        hibernate:
-          dialect: org.hibernate.dialect.PostgreSQLDialect
+    url: jdbc:postgresql://localhost:9432/sht-db
+    username: main
+    password: main
 
 eureka:
   client:
