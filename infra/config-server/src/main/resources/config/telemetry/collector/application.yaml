@@ -1,13 +1,16 @@
-collector:
-  kafka:
-    producer-properties:
-      "bootstrap.servers": localhost:9092
-      "client.id": telemetry.collector
-      "key.serializer": org.apache.kafka.common.serialization.StringSerializer
-      "value.serializer": kafka.serializer.GeneralAvroSerializer
-    topics:
-      sensors-events: telemetry.sensors.v1
-      hubs-events: telemetry.hubs.v1
+kafka:
+  producer:
+    bootstrap-servers: localhost:9092
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: ru.yandex.practicum.kafka.serializer.AvroSerializer
+    acks: "1"
+    retries: 3
+    max-in-flight-requests: 5
+    enable-idempotence: true
+
+topic:
+  sensor-events: telemetry.sensors.v1
+  hub-events: telemetry.hubs.v1
 
 grpc:
   server:

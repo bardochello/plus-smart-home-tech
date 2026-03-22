@@ -1,7 +1,3 @@
-spring:
-  application:
-    name: aggregator
-
 kafka:
   consumer:
     bootstrap-servers: localhost:9092
