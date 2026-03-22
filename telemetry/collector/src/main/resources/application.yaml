@@ -1,4 +1,4 @@
-spring:
+pring:
   application:
     name: collector
   config:
@@ -23,7 +23,7 @@ kafka:
     bootstrap-servers: localhost:9092
     key-serializer: org.apache.kafka.common.serialization.StringSerializer
     value-serializer: ru.yandex.practicum.kafka.serializer.AvroSerializer
-    acks: "1"
+    acks: "all"
     retries: 3
     max-in-flight-requests: 5
     enable-idempotence: true
