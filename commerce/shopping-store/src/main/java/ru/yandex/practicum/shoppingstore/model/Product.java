@@ -15,29 +15,34 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Product {
-
     @Id
+    @Column(name = "product_id")
     private String productId = UUID.randomUUID().toString();
 
-    @Column(nullable = false)
+    @Column(name = "name")
     private String productName;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "image_src")
     private String imageSrc;
 
+    @Column(name = "quantity_state")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private QuantityState quantityState = QuantityState.ENDED;
 
+    @Column(name = "product_state")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private ProductState productState = ProductState.ACTIVE;
 
+    @Column(name = "category")
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private ProductCategory productCategory;
 
+    @Column(name = "price")
     private double price;
+
+    @Column(name = "rating")
+    private Float rating;
 }
