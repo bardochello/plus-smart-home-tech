@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: aggregator
+  config:
+    import: optional:configserver:http://localhost:8888
+  cloud:
+    config:
+      fail-fast: false
+      retry:
+        useRandomPolicy: true
+        max-interval: 6000
+      discovery:
+        enabled: false
+
+eureka:
+  client:
+    enabled: false
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+kafka:
+  consumer:
+    bootstrap-servers: localhost:9092
+    group-id: aggregator-group-v13
+  producer:
+    bootstrap-servers: localhost:9092
+  topics:
+    sensor-events: telemetry.sensors.v1
+    snapshots: telemetry.snapshots.v1
+
+logging:
+  level:
+    ru.yandex.practicum: INFO

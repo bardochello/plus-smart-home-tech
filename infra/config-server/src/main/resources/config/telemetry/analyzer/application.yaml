@@ -1,0 +1,32 @@
+kafka:
+  bootstrap-servers: localhost:9092
+  topics:
+    hub-events: telemetry.hubs.v1
+    snapshots: telemetry.snapshots.v1
+
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate.format_sql: true
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:9432/sht-db
+    username: main
+    password: main
+  sql:
+    init:
+      mode: always
+
+grpc:
+  client:
+    hub-router:
+      address: 'static://localhost:59090'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
+server:
+  port: 0

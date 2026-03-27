@@ -9,7 +9,17 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
+    <modules>
+        <module>config-server</module>
+        <module>discovery-server</module>
+    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-config-server</artifactId>
+        </dependency>
+    </dependencies>
+
     <artifactId>infra</artifactId>
     <packaging>pom</packaging>
-
 </project>

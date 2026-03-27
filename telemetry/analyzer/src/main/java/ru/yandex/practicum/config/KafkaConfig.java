@@ -3,6 +3,7 @@ package ru.yandex.practicum.config;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import ru.yandex.practicum.deserializer.HubEventDeserializer;
 import ru.yandex.practicum.deserializer.SensorsSnapshotDeserializer;
@@ -10,6 +11,7 @@ import ru.yandex.practicum.deserializer.SensorsSnapshotDeserializer;
 import java.util.Properties;
 
 @Configuration
+@ConfigurationProperties("analyzer.kafka")
 public class KafkaConfig {
     @Value("${kafka.bootstrap-servers}")
     private String bootstrapServers;
