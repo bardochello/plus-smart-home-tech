@@ -1,6 +1,7 @@
 package ru.yandex.practicum.shoppingcart.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.interaction.api.ShoppingCartOperations;
@@ -11,6 +12,7 @@ import ru.yandex.practicum.shoppingcart.service.ShoppingCartService;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/shopping-cart")
 @RequiredArgsConstructor
@@ -21,6 +23,7 @@ public class ShoppingCartController implements ShoppingCartOperations {
     @Override
     @GetMapping
     public ResponseEntity<ShoppingCartDto> getShoppingCart(@RequestParam("username") String username) {
+        log.debug("Получен запрос на получение списка товаров в корзине пользователя {}", username);
         return ResponseEntity.ok(service.getShoppingCart(username));
     }
 

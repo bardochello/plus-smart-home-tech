@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.interaction.dto.*;
 
+import java.util.Map;
+
 @FeignClient(name = "warehouse")
 public interface WarehouseOperations {
 
@@ -20,4 +22,13 @@ public interface WarehouseOperations {
 
     @GetMapping("/api/v1/warehouse/address")
     ResponseEntity<AddressDto> getWarehouseAddress();
+
+    @PostMapping("/api/v1/warehouse/assembly")
+    ResponseEntity<BookedProductsDto> assemblyProductsForOrder(@RequestBody AssemblyProductsForOrderRequest request);
+
+    @PostMapping("/api/v1/warehouse/shipped")
+    ResponseEntity<Void> shippedToDelivery(@RequestBody ShippedToDeliveryRequest request);
+
+    @PostMapping("/api/v1/warehouse/return")
+    ResponseEntity<Void> acceptReturn(@RequestBody Map<String, Long> products);
 }
